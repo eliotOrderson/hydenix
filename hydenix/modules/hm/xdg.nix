@@ -52,23 +52,29 @@ in
     };
 
     # Set environment variables
-    home.sessionVariables = {
-      # Base XDG directories
-      XDG_CACHE_HOME = config.xdg.cacheHome;
-      XDG_CONFIG_HOME = config.xdg.configHome;
-      XDG_DATA_HOME = config.xdg.dataHome;
-      XDG_STATE_HOME = config.xdg.stateHome;
-      XDG_RUNTIME_DIR = "/run/user/$(id -u)";
-
-      # User directories
-      XDG_DESKTOP_DIR = config.xdg.userDirs.desktop;
-      XDG_DOCUMENTS_DIR = config.xdg.userDirs.documents;
-      XDG_DOWNLOAD_DIR = config.xdg.userDirs.download;
-      XDG_MUSIC_DIR = config.xdg.userDirs.music;
-      XDG_PICTURES_DIR = config.xdg.userDirs.pictures;
-      XDG_PUBLICSHARE_DIR = config.xdg.userDirs.publicShare;
-      XDG_TEMPLATES_DIR = config.xdg.userDirs.templates;
-      XDG_VIDEOS_DIR = config.xdg.userDirs.videos;
+    home.sessionVariables =
+      {
+        # Base XDG directories
+        XDG_CACHE_HOME = config.xdg.cacheHome;
+        XDG_CONFIG_HOME = config.xdg.configHome;
+        XDG_DATA_HOME = config.xdg.dataHome;
+        XDG_STATE_HOME = config.xdg.stateHome;
+        XDG_RUNTIME_DIR = "/run/user/$(id -u)";
+      }
+      # User directories. Each entry is optional: a downstream configuration can
+      # set any of them to null to disable it, and home.sessionVariables only
+      # accepts strings, so emit the ones that are actually set.
+      // lib.filterAttrs (_: value: value != null) {
+        XDG_DESKTOP_DIR = config.xdg.userDirs.desktop;
+        XDG_DOCUMENTS_DIR = config.xdg.userDirs.documents;
+        XDG_DOWNLOAD_DIR = config.xdg.userDirs.download;
+        XDG_MUSIC_DIR = config.xdg.userDirs.music;
+        XDG_PICTURES_DIR = config.xdg.userDirs.pictures;
+        XDG_PUBLICSHARE_DIR = config.xdg.userDirs.publicShare;
+        XDG_TEMPLATES_DIR = config.xdg.userDirs.templates;
+        XDG_VIDEOS_DIR = config.xdg.userDirs.videos;
+      }
+      // {
 
       # Additional XDG-related variables
       LESSHISTFILE = "/tmp/less-hist";
