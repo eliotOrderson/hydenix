@@ -1,3 +1,7 @@
+# DISABLED: upstream repo KaranRaval123/Sci-fi was deleted (account gone) and the
+# theme was removed from HyDE-Project/hyde-gallery; no mirror found (2026-09).
+# The entry is commented out in themes/default.nix. If a mirror appears,
+# restore it there — keep this file's rev/sha256, which are still valid.
 { pkgs, mkTheme }:
 mkTheme rec {
   name = "Sci-fi";

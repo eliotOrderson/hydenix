@@ -2,7 +2,7 @@
 mkTheme rec {
   name = "Nightbrew";
   src = pkgs.fetchFromGitHub {
-    owner = "jackpawlik1";
+    owner = "jackpawlik26";
     repo = "Nightbrew";
     rev = "7cd0355316c1d302cda31076d0a713549007d1bd";
     name = name;
@@ -11,6 +11,6 @@ mkTheme rec {
   meta = {
     name = name;
     description = "HyDE Theme: Nightbrew";
-    homepage = "https://github.com/jackpawlik1/Nightbrew";
+    homepage = "https://github.com/jackpawlik26/Nightbrew";
   };
 }

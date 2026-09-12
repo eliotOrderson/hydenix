@@ -9,7 +9,7 @@ stdenv.mkDerivation {
   version = "1.0.0";
 
   src = pkgs.fetchurl {
-    url = "https://github.com/HyDE-Project/HyDE/raw/refs/heads/master/Source/arcs/Cursor_BibataIce.tar.gz";
+    url = "https://github.com/HyDE-Project/HyDE/raw/be97b8b4db232bfffc9b74fd27ba90a3457b9354/Source/arcs/Cursor_BibataIce.tar.gz";
     sha256 = "sha256-pYvIxOZ3jvcLrv4bDYPc0FPkPLydyWwltFLCZ7aILaQ=";
   };
 
