@@ -16,6 +16,7 @@
     ./hyprland
     ./lockscreen.nix
     ./notifications.nix
+    ./portal.nix
     ./qt.nix
     ./rofi.nix
     ./screenshots.nix

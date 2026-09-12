@@ -19,48 +19,36 @@ in
 
   config = lib.mkIf cfg.enable {
 
+    # Portal configuration lives in hydenix.hm.portal, not here. Every value
+    # below is mkDefault so a downstream configuration can override it or turn
+    # it off without having to disable this whole module.
     xdg = {
-      enable = true;
-
-      portal = {
-        enable = true;
-        extraPortals = with pkgs; [
-          pkgs.xdg-desktop-portal-hyprland
-          xdg-desktop-portal-gtk
-          xdg-desktop-portal
-        ];
-        xdgOpenUsePortal = true;
-        configPackages = with pkgs; [
-          pkgs.xdg-desktop-portal-hyprland
-          xdg-desktop-portal-gtk
-          xdg-desktop-portal
-        ];
-      };
+      enable = lib.mkDefault true;
 
       mimeApps = {
-        enable = true;
+        enable = lib.mkDefault true;
       };
 
       userDirs = {
-        enable = true;
-        createDirectories = true;
+        enable = lib.mkDefault true;
+        createDirectories = lib.mkDefault true;
 
         # Define standard XDG user directories
-        desktop = "${config.home.homeDirectory}/Desktop";
-        documents = "${config.home.homeDirectory}/Documents";
-        download = "${config.home.homeDirectory}/Downloads";
-        music = "${config.home.homeDirectory}/Music";
-        pictures = "${config.home.homeDirectory}/Pictures";
-        publicShare = "${config.home.homeDirectory}/Public";
-        templates = "${config.home.homeDirectory}/Templates";
-        videos = "${config.home.homeDirectory}/Videos";
+        desktop = lib.mkDefault "${config.home.homeDirectory}/Desktop";
+        documents = lib.mkDefault "${config.home.homeDirectory}/Documents";
+        download = lib.mkDefault "${config.home.homeDirectory}/Downloads";
+        music = lib.mkDefault "${config.home.homeDirectory}/Music";
+        pictures = lib.mkDefault "${config.home.homeDirectory}/Pictures";
+        publicShare = lib.mkDefault "${config.home.homeDirectory}/Public";
+        templates = lib.mkDefault "${config.home.homeDirectory}/Templates";
+        videos = lib.mkDefault "${config.home.homeDirectory}/Videos";
       };
 
       # Define standard XDG base directories
-      cacheHome = "${config.home.homeDirectory}/.cache";
-      configHome = "${config.home.homeDirectory}/.config";
-      dataHome = "${config.home.homeDirectory}/.local/share";
-      stateHome = "${config.home.homeDirectory}/.local/state";
+      cacheHome = lib.mkDefault "${config.home.homeDirectory}/.cache";
+      configHome = lib.mkDefault "${config.home.homeDirectory}/.config";
+      dataHome = lib.mkDefault "${config.home.homeDirectory}/.local/share";
+      stateHome = lib.mkDefault "${config.home.homeDirectory}/.local/state";
     };
 
     # Set environment variables
