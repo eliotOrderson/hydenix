@@ -2,10 +2,20 @@
   description = "Nix & home-manager configuration for HyDE, an Arch Linux based Hyprland desktop";
 
   inputs = {
-    # Hydenix's nixpkgs
-    nixpkgs.url = "github:nixos/nixpkgs/95e96e8632c387dcf8c4223b8ab14a58936f8b10";
+    # Hydenix's nixpkgs. Tracks a release branch rather than a commit so the packages outside the
+    # HyDE bundle keep receiving stable-branch fixes; bump to the next branch when it reaches EOL.
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
+
+    # Bundle base for the packages HyDE writes configuration for, see hydenix/sources/pins.nix.
+    # Must move in lockstep with `hyde`: HyDE's configs and wallbash templates are written against
+    # the desktop stack that was current at that hyde revision, so bumping one without the other
+    # leaves the configuration targeting a stack that no longer exists.
+    # Pinned to a revision on purpose: it defines the desktop stack, not the system's package set.
+    nixpkgs-hyde.url = "github:nixos/nixpkgs/95e96e8632c387dcf8c4223b8ab14a58936f8b10";
+
     home-manager = {
-      url = "github:nix-community/home-manager";
+      # Must stay on the same release as nixpkgs, home-manager is version-coupled to it.
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-hardware.url = "github:nixos/nixos-hardware/master";
@@ -37,7 +47,7 @@
     };
   };
   outputs =
-    { ... }@inputs:
+    inputs:
     let
       system = "x86_64-linux";
 
@@ -91,9 +101,9 @@
       };
 
       checks.${system} = {
-        hyq = inputs.self.packages.${system}.hyq;
-        hydectl = inputs.self.packages.${system}.hydectl;
-        hyde-config = inputs.self.packages.${system}.hyde-config;
+        inherit (inputs.self.packages.${system}) hyq;
+        inherit (inputs.self.packages.${system}) hydectl;
+        inherit (inputs.self.packages.${system}) hyde-config;
         #FIXME: hyde-ipc has 2gb of build dependencies, so disable for now to prevent gh actions timeouts
         # hyde-ipc = inputs.self.packages.${system}.hyde-ipc;
       };

@@ -22,4 +22,4 @@ let
     hyde-config = inputs.hyde-config.packages.${prev.stdenv.hostPlatform.system}.default;
   };
 in
-packages
+packages // (import ./pins.nix { inherit inputs; }).overlay final prev
