@@ -58,7 +58,6 @@ a nixos and home-manager configuration for [HyDE](https://github.com/HyDE-Projec
 - [troubleshooting & issues](./template/docs/troubleshooting.md)
 - [contributing](./template/docs/contributing.md)
 - [community configs](./template/docs/community.md)
-- [todo - sneak peak of whats coming soon](./TODO.md)
 
 ## hydenix vm
 
