@@ -25,7 +25,7 @@ in
   options =
     let
 
-      mergeAttrsList = builtins.foldl' (lib.mergeAttrs) { };
+      mergeAttrsList = builtins.foldl' lib.mergeAttrs { };
 
       fileAttrsType = lib.types.attrsOf (
         lib.types.submodule (
@@ -64,11 +64,9 @@ in
     home.activation.mutableFileGeneration =
       let
 
-        allFiles = (
-          builtins.concatLists (
+        allFiles = builtins.concatLists (
             map (attrPath: builtins.attrValues (lib.getAttrFromPath attrPath config)) fileOptionAttrPaths
-          )
-        );
+          );
 
         filterMutableFiles = builtins.filter (
           file:
@@ -78,8 +76,7 @@ in
 
         mutableFiles = filterMutableFiles allFiles;
 
-        toCommand = (
-          file:
+        toCommand = file:
           let
             source = lib.escapeShellArg file.source;
             target = lib.escapeShellArg file.target;
@@ -121,8 +118,7 @@ in
                 }
               fi
             fi
-          ''
-        );
+          '';
 
         command =
           ''
@@ -132,6 +128,6 @@ in
           + lib.concatLines (map toCommand mutableFiles);
 
       in
-      (lib.hm.dag.entryAfter [ "linkGeneration" ] command);
+      lib.hm.dag.entryAfter [ "linkGeneration" ] command;
   };
 }

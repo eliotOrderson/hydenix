@@ -5,7 +5,7 @@ mkTheme rec {
     owner = "HyDE-Project";
     repo = "hyde-themes";
     rev = "ab5030a3b808b0754e30a2867a2fa217956e66d2";
-    name = name;
+    inherit name;
     sha256 = "sha256-bA07uhuF67ZN6USBsF5fvSFvPe/tiHQzxvV1dFEoXYI=";
   };
   meta = {

@@ -46,7 +46,7 @@ in
 
   config = lib.mkIf cfg.enable {
     boot = {
-      kernelPackages = cfg.kernelPackages;
+      inherit (cfg) kernelPackages;
       loader =
         if cfg.useSystemdBoot then
           {

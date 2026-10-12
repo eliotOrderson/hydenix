@@ -71,15 +71,6 @@ inputs.nixpkgs.lib.nixosSystem {
           initialPassword = "nixos";
         };
 
-        # Enable SSH server
-        services.openssh = {
-          enable = true;
-          settings = {
-            PermitRootLogin = "no";
-            PasswordAuthentication = true;
-          };
-        };
-
         # Enable flakes
         nix = {
           extraOptions = ''
@@ -100,8 +91,18 @@ inputs.nixpkgs.lib.nixosSystem {
           spice-vdagent
           git # Required for flakes
         ];
-        services.qemuGuest.enable = true;
-        services.spice-vdagentd.enable = true;
+        services = {
+          # Enable SSH server
+          openssh = {
+            enable = true;
+            settings = {
+              PermitRootLogin = "no";
+              PasswordAuthentication = true;
+            };
+          };
+          qemuGuest.enable = true;
+          spice-vdagentd.enable = true;
+        };
         hardware.graphics.enable = true;
       }
     )

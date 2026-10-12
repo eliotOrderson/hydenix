@@ -45,15 +45,6 @@ nixosConfiguration.extendModules {
           system.stateVersion = "25.05";
         };
 
-        # Enable SSH server
-        services.openssh = {
-          enable = true;
-          settings = {
-            PermitRootLogin = "no";
-            PasswordAuthentication = true;
-          };
-        };
-
         virtualisation.libvirtd.enable = true;
         environment.systemPackages = with pkgs; [
           open-vm-tools
@@ -61,9 +52,17 @@ nixosConfiguration.extendModules {
           spice-vdagent
           spice
         ];
-        services.qemuGuest.enable = true;
-        services.spice-vdagentd = {
-          enable = true;
+        services = {
+          # Enable SSH server
+          openssh = {
+            enable = true;
+            settings = {
+              PermitRootLogin = "no";
+              PasswordAuthentication = true;
+            };
+          };
+          qemuGuest.enable = true;
+          spice-vdagentd.enable = true;
         };
         hardware.graphics.enable = true;
 

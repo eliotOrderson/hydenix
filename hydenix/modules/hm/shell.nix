@@ -114,7 +114,7 @@ in
       syntaxHighlighting.enable = true;
       oh-my-zsh = {
         enable = true;
-        plugins = cfg.zsh.plugins;
+        inherit (cfg.zsh) plugins;
       };
       dotDir = "${config.xdg.configHome}/zsh";
 
@@ -285,7 +285,7 @@ in
           "${pkgs.hyde}/Configs/.config/zsh/completions/hyde-shell.zsh";
         ".config/zsh/.p10k.zsh" = {
           source = "${pkgs.hyde}/Configs/.config/zsh/.p10k.zsh";
-          enable = cfg.p10k.enable;
+          inherit (cfg.p10k) enable;
         };
         ".config/zsh/completions/fzf.zsh".source = "${pkgs.hyde}/Configs/.config/zsh/completions/fzf.zsh";
         ".config/zsh/completions/hydectl.zsh".source =

@@ -5,7 +5,7 @@ mkTheme rec {
     owner = "rishav12s";
     repo = "Monterey-Frost";
     rev = "4675ddd4abae2d86ce3d2c3940b29071ce1b4580";
-    name = name;
+    inherit name;
     sha256 = "sha256-ECG7wyIa0RdZteTEdQjpVjhbf62XXz0rW3Ea494461E=";
   };
   meta = {

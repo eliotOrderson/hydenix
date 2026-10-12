@@ -4,7 +4,7 @@ mkTheme rec {
   src = pkgs.fetchFromGitHub {
     owner = "rishav12s";
     repo = "Cat-Latte";
-    name = name;
+    inherit name;
     rev = "132ffcc1fa97ec1d1743741b37abf1de2c8e9aa6";
     sha256 = "sha256-giarUq0eQS8qLfnpGIKQ6pw6sqAcaYohnxC305OkPLc=";
   };

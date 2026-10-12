@@ -23,51 +23,53 @@ in
   ];
 
   config = lib.mkIf cfg.enable {
-    # Always include packages and base setup
-    home.packages = [
-      pkgs.hyprutils
-      pkgs.hyprpicker
-      pkgs.hyprcursor
-    ];
+    home = {
+      # Always include packages and base setup
+      packages = [
+        pkgs.hyprutils
+        pkgs.hyprpicker
+        pkgs.hyprcursor
+      ];
 
-    home.activation.createHyprConfigs = lib.hm.dag.entryAfter [ "mutableGeneration" ] ''
-      mkdir -p "$HOME/.config/hypr/animations"
-      mkdir -p "$HOME/.config/hypr/themes"
-      mkdir -p "$HOME/.config/hypr/shaders"
-      mkdir -p "$HOME/.config/hypr/workflows"
+      activation.createHyprConfigs = lib.hm.dag.entryAfter [ "mutableGeneration" ] ''
+        mkdir -p "$HOME/.config/hypr/animations"
+        mkdir -p "$HOME/.config/hypr/themes"
+        mkdir -p "$HOME/.config/hypr/shaders"
+        mkdir -p "$HOME/.config/hypr/workflows"
 
-      touch "$HOME/.config/hypr/animations/theme.conf"
-      touch "$HOME/.config/hypr/themes/colors.conf"
-      touch "$HOME/.config/hypr/themes/theme.conf"
-      touch "$HOME/.config/hypr/themes/wallbash.conf"
+        touch "$HOME/.config/hypr/animations/theme.conf"
+        touch "$HOME/.config/hypr/themes/colors.conf"
+        touch "$HOME/.config/hypr/themes/theme.conf"
+        touch "$HOME/.config/hypr/themes/wallbash.conf"
 
-      chmod 644 "$HOME/.config/hypr/animations/theme.conf"
-      chmod 644 "$HOME/.config/hypr/themes/colors.conf"
-      chmod 644 "$HOME/.config/hypr/themes/theme.conf"
-      chmod 644 "$HOME/.config/hypr/themes/wallbash.conf"
+        chmod 644 "$HOME/.config/hypr/animations/theme.conf"
+        chmod 644 "$HOME/.config/hypr/themes/colors.conf"
+        chmod 644 "$HOME/.config/hypr/themes/theme.conf"
+        chmod 644 "$HOME/.config/hypr/themes/wallbash.conf"
 
-    '';
+      '';
 
-    home.file = {
-      ".local/share/hypr/" = {
-        source = "${pkgs.hyde}/Configs/.local/share/hypr/";
-        recursive = true;
-      };
-      ".config/hypr/hyprland.conf" =
-        if cfg.overrideMain != null then
-          {
-            text = cfg.overrideMain;
-            force = true;
-          }
-        else
-          {
-            source = "${pkgs.hyde}/Configs/.config/hypr/hyprland.conf";
-            force = true;
-          };
+      file = {
+        ".local/share/hypr/" = {
+          source = "${pkgs.hyde}/Configs/.local/share/hypr/";
+          recursive = true;
+        };
+        ".config/hypr/hyprland.conf" =
+          if cfg.overrideMain != null then
+            {
+              text = cfg.overrideMain;
+              force = true;
+            }
+          else
+            {
+              source = "${pkgs.hyde}/Configs/.config/hypr/hyprland.conf";
+              force = true;
+            };
 
-      ".config/hypr/userprefs.conf" = {
-        text = cfg.extraConfig;
-        force = true;
+        ".config/hypr/userprefs.conf" = {
+          text = cfg.extraConfig;
+          force = true;
+        };
       };
     };
   };

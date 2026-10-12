@@ -5,11 +5,11 @@ mkTheme rec {
     owner = "jackpawlik26";
     repo = "Amethyst-Aura";
     rev = "821eb5523afb5920b9305dd2dc9206958cedd6a0";
-    name = name;
+    inherit name;
     sha256 = "sha256-NjF0QQxqdYIxqv63Hgo9Waxa1arPfFXK65mRo0N9gvk=";
   };
   meta = {
-    name = name;
+    inherit name;
     description = "HyDE Theme: Amethyst-Aura";
     homepage = "https://github.com/jackpawlik26/Amethyst-Aura";
   };
