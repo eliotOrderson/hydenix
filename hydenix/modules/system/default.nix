@@ -61,6 +61,12 @@ in
     i18n.defaultLocale = lib.mkIf cfg.enable cfg.locale;
     networking.hostName = lib.mkIf cfg.enable cfg.hostname;
 
-    system.stateVersion = "25.05";
+    # A default, not a fixed value. stateVersion records the release a machine's state was created
+    # under, so it belongs to the machine's owner and not to a module: pinned here, every downstream
+    # system shares one anchor and its own `system.stateVersion` becomes a conflicting definition
+    # that fails evaluation. As a default an explicit setting still wins, and a downstream that sets
+    # none gets nixpkgs' own warning about it rather than silence. See home.stateVersion in the hm
+    # module for the same reasoning.
+    system.stateVersion = lib.mkDefault "25.05";
   };
 }
