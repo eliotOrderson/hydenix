@@ -54,21 +54,31 @@ in
       coreutils # coreutils implementation
       bash-completion # Add bash-completion package
 
+      luarocks
       hypridle
     ];
 
     environment.variables = {
       NIXOS_OZONE_WL = "1";
     };
+    programs = {
 
-    programs.hyprland = {
-      package = pkgs.hyprland;
-      portalPackage = pkgs.xdg-desktop-portal-hyprland;
-      enable = true;
-      withUWSM = true;
+      hyprland = {
+        package = pkgs.hyprland;
+        portalPackage = pkgs.xdg-desktop-portal-hyprland;
+        enable = true;
+        withUWSM = true;
+      };
+
+      nix-ld.enable = true;
+
+      dconf.enable = true;
+      gnupg.agent = {
+        enable = true;
+        enableSSHSupport = true;
+      };
+      zsh.enable = true;
     };
-
-    programs.nix-ld.enable = true;
 
     hardware.bluetooth = {
       enable = true;
@@ -88,18 +98,13 @@ in
       openssh.enable = true;
       libinput.enable = true;
     };
+    security = {
 
-    programs.dconf.enable = true;
-    programs.gnupg.agent = {
-      enable = true;
-      enableSSHSupport = true;
+      # For polkit authentication
+      polkit.enable = true;
+      pam.services.swaylock = { };
+      rtkit.enable = true;
     };
-    programs.zsh.enable = true;
-
-    # For polkit authentication
-    security.polkit.enable = true;
-    security.pam.services.swaylock = { };
-    security.rtkit.enable = true;
     systemd.user.services.polkit-gnome-authentication-agent-1 = {
       description = "polkit-gnome-authentication-agent-1";
       wantedBy = [ "graphical-session.target" ];

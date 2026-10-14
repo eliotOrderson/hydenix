@@ -24,17 +24,17 @@
     "hyde": {
       "flake": false,
       "locked": {
-        "lastModified": 1761746426,
-        "narHash": "sha256-9Z045RQIvLR8uY4RQsW8C+aMG5kljY5ZvROVNnTbtkY=",
+        "lastModified": 1787285013,
+        "narHash": "sha256-+YhLk3J59zThsVVDsbTlSKcBulSxOO/r/HpPZ6Udg1M=",
         "owner": "HyDE-Project",
         "repo": "HyDE",
-        "rev": "be97b8b4db232bfffc9b74fd27ba90a3457b9354",
+        "rev": "7c7b832d479620133fb0a2bdec0fe20cf2e7c90a",
         "type": "github"
       },
       "original": {
         "owner": "HyDE-Project",
         "repo": "HyDE",
-        "rev": "be97b8b4db232bfffc9b74fd27ba90a3457b9354",
+        "rev": "7c7b832d479620133fb0a2bdec0fe20cf2e7c90a",
         "type": "github"
       }
     },
@@ -99,21 +99,20 @@
         "type": "github"
       }
     },
-    "hyq": {
-      "inputs": {
-        "nixpkgs": "nixpkgs_2"
-      },
+    "hyprquery": {
+      "flake": false,
       "locked": {
-        "lastModified": 1767286442,
-        "narHash": "sha256-tUbPjlqB3VPWmQIfDnIen1dKFwHRG4S9Ox4pCjQ72/w=",
-        "owner": "richen604",
+        "lastModified": 1781363547,
+        "narHash": "sha256-nGvpj4vbhUX2Xh6usUPQghKdj2Wy6ADMU16SSrKwzkA=",
+        "owner": "HyDE-Project",
         "repo": "hyprquery",
-        "rev": "74968e9e7fd3111ac94c18e41a61f02eefd11d2b",
+        "rev": "002af783eeb8c487a4bf90d75e5a804340557967",
         "type": "github"
       },
       "original": {
-        "owner": "richen604",
+        "owner": "HyDE-Project",
         "repo": "hyprquery",
+        "rev": "002af783eeb8c487a4bf90d75e5a804340557967",
         "type": "github"
       }
     },
@@ -169,39 +168,7 @@
         "type": "github"
       }
     },
-    "nixpkgs-hyde": {
-      "locked": {
-        "lastModified": 1767018855,
-        "narHash": "sha256-1x45oTBc0IGEmiRaRTj2TkE6OVU2n2oK++o/Vsv1PZU=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "95e96e8632c387dcf8c4223b8ab14a58936f8b10",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "95e96e8632c387dcf8c4223b8ab14a58936f8b10",
-        "type": "github"
-      }
-    },
     "nixpkgs_2": {
-      "locked": {
-        "lastModified": 1767116409,
-        "narHash": "sha256-5vKw92l1GyTnjoLzEagJy5V5mDFck72LiQWZSOnSicw=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "cad22e7d996aea55ecab064e84834289143e44a0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "cad22e7d996aea55ecab064e84834289143e44a0",
-        "type": "github"
-      }
-    },
-    "nixpkgs_3": {
       "locked": {
         "lastModified": 1791662279,
         "narHash": "sha256-xI8L+UwJLIg75yVJwLPsY+AUEP1teCT3FyuvodyJu2Y=",
@@ -224,11 +191,10 @@
         "hyde-config": "hyde-config",
         "hyde-ipc": "hyde-ipc",
         "hydectl": "hydectl",
-        "hyq": "hyq",
+        "hyprquery": "hyprquery",
         "nix-index-database": "nix-index-database",
         "nixos-hardware": "nixos-hardware",
-        "nixpkgs": "nixpkgs_3",
-        "nixpkgs-hyde": "nixpkgs-hyde"
+        "nixpkgs": "nixpkgs_2"
       }
     },
     "rust-overlay": {

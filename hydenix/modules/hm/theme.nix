@@ -53,6 +53,11 @@ in
       ];
 
       # walks through the themes and creates symlinks in the hyde themes directory
+      #
+      # A store symlink rather than a copy: switching a theme only reads this directory, since
+      # theme.switch.sh writes the resulting Hyprland state to ~/.local/state/hyde/lua_state and
+      # leaves the theme itself alone. Importing a theme from a URL would write here, and that is a
+      # workflow for a HyDE installed by hand; here the set of themes is `cfg.themes`.
       file =
         let
           # Find the package for each theme name, filtering out missing ones
@@ -69,7 +74,6 @@ in
               source = "${theme.pkg}/share/hyde/themes/${theme.name}";
               force = true;
               recursive = true;
-              mutable = true;
             };
           }) themesList
         );
@@ -83,13 +87,13 @@ in
       */
 
       # applies what it can before graphical.target, think of this like a "first content paint"
-      activation.setTheme = lib.hm.dag.entryAfter [ "mutableGeneration" ] ''
+      activation.setTheme = lib.hm.dag.entryAfter [ "hydeSeed" ] ''
         # Define path with required tools
         export PATH="${
           lib.makeBinPath (
             with pkgs;
             [
-              swww
+              awww
               killall
               hyprland
               dunst
@@ -119,8 +123,15 @@ in
 
         export LOG_LEVEL=debug
 
-        # Run the theme switch commands with the custom runtime dir
-        $HOME/.local/lib/hyde/theme.switch.sh -s "${cfg.active}" >> "$LOG_FILE" 2>&1
+        # Run the theme switch commands with the custom runtime dir.
+        #
+        # Best effort, and deliberately not fatal. This runs before graphical-session.target, so the
+        # parts of theme.switch.sh that need a session (dconf, gsettings, flatpak) can legitimately
+        # fail here; the same script runs again from setTheme.service once the session is up, and
+        # that one is authoritative. A failure here used to abort the whole activation, which also
+        # stopped every file from being linked, so a cosmetic problem took the session down with it.
+        $HOME/.local/lib/hyde/theme.switch.sh -s "${cfg.active}" >> "$LOG_FILE" 2>&1 ||
+          echo "hydenix: theme switch failed, see $LOG_FILE; setTheme.service retries it at login" >&2
 
         echo "Theme switch completed. Log saved to $LOG_FILE" | tee -a "$LOG_FILE"
       '';
@@ -152,7 +163,7 @@ in
           imagemagick
           gawk
           parallel
-          swww
+          awww
           waybar
           kitty
           dunst
@@ -181,7 +192,7 @@ in
           ${config.home.homeDirectory}/.local/lib/hyde/theme.switch.sh -s "${cfg.active}" || true
         '';
         Path = with pkgs; [
-          swww
+          awww
           killall
           hyprland
           dunst

@@ -23,10 +23,13 @@ in
         description = "Enable vscode";
       };
 
+      # Kept so configurations that set it still evaluate. HyDE v26.08.21 dropped
+      # Source/arcs/Code_Wallbash.vsix, so the package no longer carries an extension to deploy
+      # and this now selects nothing.
       wallbash = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Enable wallbash extension for vscode";
+        description = "Deprecated: HyDE no longer ships the wallbash extension for vscode";
       };
     };
 
@@ -54,50 +57,6 @@ in
       packages = with pkgs; [
         (lib.mkIf cfg.vim vim) # terminal text editor
         (lib.mkIf cfg.neovim neovim) # terminal text editor
-      ];
-
-      file = lib.mkMerge [
-        (lib.mkIf cfg.vscode.enable {
-          # Editor flags
-          ".config/code-flags.conf".source = "${pkgs.hyde}/Configs/.config/code-flags.conf";
-          ".config/codium-flags.conf".source = "${pkgs.hyde}/Configs/.config/codium-flags.conf";
-
-          # VS Code settings
-          ".config/Code - OSS/User/settings.json" = {
-            source = "${pkgs.hyde}/Configs/.config/Code - OSS/User/settings.json";
-            force = true;
-            mutable = true;
-          };
-          ".config/Code/User/settings.json" = {
-            source = "${pkgs.hyde}/Configs/.config/Code/User/settings.json";
-            force = true;
-            mutable = true;
-          };
-          ".config/VSCodium/User/settings.json" = {
-            source = "${pkgs.hyde}/Configs/.config/VSCodium/User/settings.json";
-            force = true;
-            mutable = true;
-          };
-        })
-        (lib.mkIf cfg.vscode.wallbash {
-          # Link the wallbash extension from hyde package
-          ".vscode/extensions/prasanthrangan.wallbash" = {
-            source = "${pkgs.hyde}/share/vscode/extensions/prasanthrangan.wallbash";
-            recursive = true;
-            mutable = true;
-            force = true;
-          };
-        })
-
-        (lib.mkIf (cfg.vim or cfg.neovim) {
-          ".config/vim/colors/wallbash.vim" = {
-            source = "${pkgs.hyde}/Configs/.config/vim/colors/wallbash.vim";
-            force = true;
-            mutable = true;
-          };
-          ".config/vim/hyde.vim".source = "${pkgs.hyde}/Configs/.config/vim/hyde.vim";
-          ".config/vim/vimrc".source = "${pkgs.hyde}/Configs/.config/vim/vimrc";
-        })
       ];
 
       sessionVariables = {

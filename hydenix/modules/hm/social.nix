@@ -38,11 +38,5 @@ in
       (lib.mkIf cfg.discord.enable discord)
       (lib.mkIf cfg.vesktop.enable vesktop)
     ];
-
-    home.file = {
-      ".config/electron-flags.conf" = {
-        source = "${pkgs.hyde}/Configs/.config/electron-flags.conf";
-      };
-    };
   };
 }

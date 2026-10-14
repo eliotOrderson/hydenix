@@ -2,16 +2,10 @@
   description = "Nix & home-manager configuration for HyDE, an Arch Linux based Hyprland desktop";
 
   inputs = {
-    # Hydenix's nixpkgs. Tracks a release branch rather than a commit so the packages outside the
-    # HyDE bundle keep receiving stable-branch fixes; bump to the next branch when it reaches EOL.
+    # The single nixpkgs for the whole system. The desktop stack HyDE's scripts call is no longer
+    # pinned separately: base carries all of it, and a second nixpkgs only ever bought a "bundle"
+    # that then had to be kept in step with `hyde` by hand at every upstream release.
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
-
-    # Bundle base for the packages HyDE writes configuration for, see hydenix/sources/pins.nix.
-    # Must move in lockstep with `hyde`: HyDE's configs and wallbash templates are written against
-    # the desktop stack that was current at that hyde revision, so bumping one without the other
-    # leaves the configuration targeting a stack that no longer exists.
-    # Pinned to a revision on purpose: it defines the desktop stack, not the system's package set.
-    nixpkgs-hyde.url = "github:nixos/nixpkgs/95e96e8632c387dcf8c4223b8ab14a58936f8b10";
 
     home-manager = {
       # Must stay on the same release as nixpkgs, home-manager is version-coupled to it.
@@ -25,14 +19,22 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # HyDE v26.08.21 moved the Hyprland configuration to Lua, which Hyprland 0.55 or newer reads.
     hyde = {
-      url = "github:HyDE-Project/HyDE/be97b8b4db232bfffc9b74fd27ba90a3457b9354";
+      url = "github:HyDE-Project/HyDE/7c7b832d479620133fb0a2bdec0fe20cf2e7c90a";
+      flake = false;
+    };
+    # hyprquery as HyDE ships it. HyDE's theme and shader tooling calls
+    #   hyq --dump <config> --schema <hyprland-lua.json> --export lua
+    # and the richen604/hyprquery this flake used before stopped short of that: its last release
+    # (0.6.7, 2026-01-01) exports json and env only and has no --dump. HyDE took the project over
+    # and 0.6.8 added both, so configs in the Lua layout cannot be themed without it.
+    # The repository ships no flake, hence hydenix/sources/hyprquery.nix builds it from source.
+    hyprquery = {
+      url = "github:HyDE-Project/hyprquery/002af783eeb8c487a4bf90d75e5a804340557967";
       flake = false;
     };
     # HyDE related binaries
-    hyq = {
-      url = "github:richen604/hyprquery";
-    };
     hydectl = {
       url = "github:richen604/hydectl";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -65,6 +67,14 @@
         inherit inputs;
       };
 
+      # nixpkgs with the overlay the NixOS configuration uses, so `nix build .#hyprquery` builds
+      # the same derivation the system installs rather than a second copy from plain nixpkgs.
+      pkgs = import inputs.nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        overlays = [ (import ./hydenix/sources/overlay.nix { inherit inputs; }) ];
+      };
+
     in
     {
 
@@ -93,15 +103,14 @@
         # Helper to manage hyde updates
         hyde-update = import ./lib/hyde-update { inherit inputs; };
 
-        # Add hyq, hydectl, hyde-ipc, and hyde-config for building
-        hyq = inputs.hyq.packages.${system}.default;
-        hydectl = inputs.hydectl.packages.${system}.default;
-        hyde-config = inputs.hyde-config.packages.${system}.default;
-        # hyde-ipc = inputs.hyde-ipc.packages.${system}.default;
+        # HyDE's own binaries, exposed so they can be built and inspected on their own.
+        inherit (pkgs) hyprquery hydectl;
+        inherit (pkgs) hyde-config;
+        # hyde-ipc = pkgs.hyde-ipc;
       };
 
       checks.${system} = {
-        inherit (inputs.self.packages.${system}) hyq;
+        inherit (inputs.self.packages.${system}) hyprquery;
         inherit (inputs.self.packages.${system}) hydectl;
         inherit (inputs.self.packages.${system}) hyde-config;
         #FIXME: hyde-ipc has 2gb of build dependencies, so disable for now to prevent gh actions timeouts

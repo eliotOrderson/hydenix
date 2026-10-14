@@ -21,19 +21,5 @@ in
     home.packages = with pkgs; [
       dunst # notification daemon
     ];
-
-    home.file = {
-      # # stateful file for themes
-      ".config/dunst/dunstrc" = {
-        source = "${pkgs.hyde}/Configs/.config/dunst/dunstrc";
-        force = true;
-        mutable = true;
-      };
-      ".config/dunst/dunst.conf" = {
-        source = "${pkgs.hyde}/Configs/.config/dunst/dunst.conf";
-        force = true;
-        mutable = true;
-      };
-    };
   };
 }

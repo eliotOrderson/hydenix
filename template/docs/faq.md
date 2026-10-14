@@ -19,7 +19,7 @@
     - [what are some example configurations?](#what-are-some-example-configurations)
     - [how do I persist changes on reboot/rebuild/etc?](#how-do-i-persist-changes-on-rebootrebuildetc)
     - [how do I add a new theme?](#how-do-i-add-a-new-theme)
-    - [what is mutable.nix?](#what-is-mutablenix)
+    - [how does hydenix deploy Hyde's configuration?](#how-does-hydenix-deploy-hydes-configuration)
     - [why do themes still show after I remove them from `hydenix.hm.theme.themes`?](#why-do-themes-still-show-after-i-remove-them-from-hydenixhmthemethemes)
     - [requesting features](#requesting-features)
   - [other faq](#other-faq)
@@ -197,11 +197,12 @@ see [community configs](./community.md) for examples.
 
 ### how do I persist changes on reboot/rebuild/etc?
 
-> [!IMPORTANT]
-> do not edit any mutable files at runtime as they may be overwritten on rebuild <br>
-> all edits must be done in your flake via nixos & home-manager options
+> [!NOTE]
+> a file HyDE seeded is yours once it exists: editing it by hand survives every rebuild <br>
+> only the symlinked trees in the next section are replaced on each switch <br>
+> anything hydenix exposes as an option is still changed in your flake
 
-some state files in hydenix are mutable by design. this allows certain theme changes during runtime.
+some state files in hydenix are writable by design. this allows theme changes during runtime.
 
 example:
 
@@ -257,30 +258,26 @@ see [home.file options](https://home-manager-options.extranix.com/?query=home.fi
 
 <!-- TODO: docs: Add a guide on how to add a new theme -->
 
-### what is mutable.nix?
+### how does hydenix deploy Hyde's configuration?
 
-> [!IMPORTANT]
-> do not edit any mutable files at runtime as they may be overwritten on rebuild <br>
-> all edits must be done in your flake via nixos & home-manager options
+HyDE's own files reach your home directory through one of two mechanisms, and which one a path gets decides whether you can edit it by hand.
 
-`mutable.nix` is a custom module that allows certain files to be copied instead of symlinked during system builds, making them writable at runtime. key points:
+- **symlinked** — the trees HyDE only ever reads: `~/.local/lib/hyde`, `~/.local/share/hyde`, `~/.local/share/hypr`, `~/.local/share/wallbash`, `~/.local/share/waybar`, `~/.config/hyde/wallbash`, `~/.config/hypr/shaders`, `~/.config/uwsm`, and the `hyde-shell` entry point. These are store paths, so they track `nixos-rebuild` and are read-only.
+- **seeded** — everything else HyDE ships, copied into `$HOME` as a real file the first time. HyDE's scripts and its theme system write these while the session runs (`~/.config/waybar/style.css`, `~/.config/dunst/dunstrc`, `~/.config/kitty/theme.conf`, `~/.config/hyde/config.toml`, and more), which a read-only link cannot allow.
 
-- extends `home.file`, `xdg.configFile`, and `xdg.dataFile` with a `mutable` option
-- files marked as `mutable = true` (and `force = true`) will be writable
-- changes persist across rebuilds
-- useful for programs that need runtime configuration changes
+A seeded file is never overwritten, so editing one by hand survives every rebuild. To get HyDE's current version back, delete it and switch again.
+
+Anything you declare yourself with `home.file` wins: those paths are excluded from the seed and home-manager links them instead.
 
 example usage in scripts:
 
 ```nix
 home.activation = {
-    example = lib.hm.dag.entryAfter [ "mutableGeneration" ] ''
+    example = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         $DRY_RUN_CMD echo "example"
     '';
 }
 ```
-
-credit: [@piousdeer](https://gist.github.com/piousdeer/b29c272eaeba398b864da6abf6cb5daa)
 
 <div align="right">
   <a href="#faq">

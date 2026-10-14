@@ -2,46 +2,30 @@
 #
 # Nested Hyprland test for hydenix.
 #
-# Opens a throwaway Hyprland instance inside the running Wayland session and points it at the
-# configuration the flake currently builds. Nothing is installed and the live session is not
-# touched, so this is the fast way to eyeball decoration, animations, shaders and keybinds
-# before running `nixos-rebuild`.
+# Deploys the configuration this flake builds into a throwaway HOME and starts a nested Hyprland
+# against it inside the running Wayland session. Nothing is installed and the live session is not
+# touched, so this is the fast way to see whether a change to the deployment actually produces a
+# working desktop before running `nixos-rebuild`.
 #
-# The config is assembled rather than used as-is, because startup.conf runs
-#     dbus-update-activation-environment --systemd --all
-#     systemctl --user import-environment
-# which would import this nested session's environment into the user's real systemd/dbus session
-# and can break the desktop that is already running. startup.conf is therefore left out, so the
-# session daemons (waybar, dunst, swww, hypridle, ...) are deliberately not started.
+# The deployment is not reimplemented here: it runs the same `hydenix-hyde-seed` script that
+# `home.activation.hydeSeed` runs, read out of the flake. A test that reproduced the copy logic
+# could pass while the real activation was broken, which is the failure mode this is meant to catch.
 #
-# What it does cover: the flake's pinned Hyprland parsing the flake's generated HyDE config, read
-# straight out of the home-manager generation, plus the hydenix generated includes
-# (keybindings, monitors, userprefs, windowrules, workflows).
+# What it covers: the seeded config tree, the Lua entry point, the bar, the launcher, the wallpaper
+# daemon and the theme state, all against the Hyprland this flake pins.
+#
+# What it cannot cover: the GL driver and the system services still come from the running system,
+# so driver changes and multi-monitor/scale behaviour need `nixos-rebuild` and a reboot. SDDM, real
+# input devices and direct scanout are likewise out of reach here.
 #
 # usage:
-#   lib/tests/nested-hyprland.sh                 # parse the config, then open a nested window
-#   lib/tests/nested-hyprland.sh --verify-only   # parse only, no window (no GPU needed)
-#   lib/tests/nested-hyprland.sh --quick         # also launch the preview clients (see below)
+#   lib/tests/nested-hyprland.sh                 # deploy, verify the config, open a nested window
+#   lib/tests/nested-hyprland.sh --verify-only   # deploy and parse only, no window
 #   lib/tests/nested-hyprland.sh --exec kitty    # also launch something specific, repeatable
-#   lib/tests/nested-hyprland.sh --quick --new-generation
-#
-# --quick starts the desktop preview listed in quick_mode_clients below: wallpaper daemon,
-# wallpaper, bar and a terminal, so the window shows the actual desktop instead of an empty one.
-# startup.conf is skipped, so without --quick or --exec a nested session is just Hyprland's default
-# background colour and reads as black.
-#
-# --new-generation runs the session with the flake's freshly built generation ahead of the running
-# system on PATH and XDG_DATA_DIRS, so the bar, launcher, terminal and wallpaper come from the build
-# under test rather than from the installed one. Without it a bumped config is exercised against
-# the old desktop components, which gives misleading results. It cannot bring the GL driver or the
-# system services forward: those still come from the running system, so driver changes and
-# multi-monitor/scale behaviour remain untestable here and need `nixos-rebuild` + reboot.
-#
-# wrap it in gamescope to check another resolution or refresh rate:
-#   gamescope -W 2560 -H 1440 -r 144 -- lib/tests/nested-hyprland.sh --quick
+#   lib/tests/nested-hyprland.sh --keep          # keep the deployed HOME and print its path
 #
 # environment overrides:
-#   HYDENIX_USER      home-manager user to read the generated config from (default: hydenix)
+#   HYDENIX_USER      home-manager user to deploy for (default: hydenix)
 #   HYDENIX_FLAKE     flake reference to build (default: this repository)
 #
 set -euo pipefail
@@ -50,6 +34,7 @@ REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../.." && pwd)
 FLAKE=${HYDENIX_FLAKE:-"$REPO"}
 USER_NAME=${HYDENIX_USER:-hydenix}
 CONF_ATTR="nixosConfigurations.default"
+HM_ATTR="$CONF_ATTR.config.home-manager.users.$USER_NAME.home"
 
 die() {
     echo "error: $*" >&2
@@ -57,13 +42,11 @@ die() {
 }
 
 usage() {
-    # print the header comment, up to the first line of code
     sed -n '2,/^set -euo pipefail$/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//'
 }
 
 verify_only=0
-quick=0
-new_generation=0
+keep=0
 execs=()
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -71,12 +54,8 @@ while [ $# -gt 0 ]; do
         verify_only=1
         shift
         ;;
-    --quick)
-        quick=1
-        shift
-        ;;
-    --new-generation)
-        new_generation=1
+    --keep)
+        keep=1
         shift
         ;;
     --exec)
@@ -95,124 +74,158 @@ while [ $# -gt 0 ]; do
 done
 
 command -v nix >/dev/null || die "nix is not on PATH"
-
-if [ "$(id -u)" -eq 0 ]; then
-    die "run this as your normal user; Hyprland refuses to start as root"
-fi
-
-if [ -z "${WAYLAND_DISPLAY:-}${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+[ "$(id -u)" -eq 0 ] && die "run this as your normal user; Hyprland refuses to start as root"
+[ -n "${WAYLAND_DISPLAY:-}${HYPRLAND_INSTANCE_SIGNATURE:-}" ] ||
     die "no Wayland session detected; a nested Hyprland needs a parent compositor"
-fi
 
-# ---------------------------------------------------------------------------
-# quick mode (--quick): what gets launched inside the nested session
-# ---------------------------------------------------------------------------
-# One exec-once line per entry, in this order. The wallpaper daemon has to be running before the
-# first `swww img`, hence the sleep. Edit this list to taste, or pass extra clients with --exec.
-quick_mode_clients=(
-    "swww-daemon"
-    "sh -c 'sleep 2; swww img $HOME/.cache/hyde/wallpapers/swww.png'"
-    "waybar"
-    "git"
-    "kitty"
-)
+NIX=(nix --extra-experimental-features dynamic-derivations)
 
-if [ "$quick" -eq 1 ]; then
-    execs+=("${quick_mode_clients[@]}")
-fi
-
-echo "==> resolving the configuration this flake builds"
-hyde_dir=$(nix eval --raw "$FLAKE#$CONF_ATTR.pkgs.hyde")
-hyprland=$(nix eval --raw "$FLAKE#$CONF_ATTR.pkgs.hyprland")
-generation=$(nix build --no-link --print-out-paths \
-    "$FLAKE#$CONF_ATTR.config.home-manager.users.$USER_NAME.home.activationPackage")
-home_files="$generation/home-files"
+echo "==> resolving the build under test"
+hyprland=$("${NIX[@]}" eval --raw "$FLAKE#$CONF_ATTR.pkgs.hyprland")
+hyde=$("${NIX[@]}" eval --raw "$FLAKE#$CONF_ATTR.pkgs.hyde")
+seed=$("${NIX[@]}" eval --raw "$FLAKE#$HM_ATTR.activation.hydeSeed.data")
+generation=$("${NIX[@]}" build --no-link --print-out-paths "$FLAKE#$HM_ATTR.activationPackage")
 
 [ -x "$hyprland/bin/Hyprland" ] || die "no Hyprland binary at $hyprland/bin/Hyprland"
-[ -d "$home_files/.config/hypr" ] || die "no generated hypr config at $home_files/.config/hypr"
+[ -x "$seed" ] || die "the hydeSeed activation script is not executable: $seed"
 
-# Put the build under test ahead of the installed system, so the clients started by the nested
-# session come from it too. Only the programs move: the GL driver (/run/opengl-driver) and the
-# system services still belong to the running system.
-if [ "$new_generation" -eq 1 ]; then
-    toplevel=$(nix build --no-link --print-out-paths "$FLAKE#$CONF_ATTR.config.system.build.toplevel")
-    export PATH="$generation/home-path/bin:$toplevel/sw/bin:$PATH"
-    export XDG_DATA_DIRS="$generation/home-path/share:$toplevel/sw/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
-fi
+TMP=$(mktemp -d "${TMPDIR:-/tmp}/hydenix-nested.XXXXXX")
+cleanup() {
+    # Kill first, then delete: the instances hold the socket and the log open, and a failing delete
+    # must not be what stops them from being signalled.
+    pkill -f "$TMP" 2>/dev/null || true
+    if [ "$keep" -eq 1 ]; then
+        echo "kept: $TMP"
+    else
+        # The linked tree keeps store modes, which are read-only, so make it writable before the
+        # recursive delete or rm stops at the first directory it cannot descend into.
+        chmod -R u+w "$TMP" 2>/dev/null || true
+        rm -rf "$TMP" || true
+    fi
+}
+trap cleanup EXIT
 
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+HOME_DIR="$TMP/home"
+mkdir -p "$HOME_DIR"
 
-cat >"$TMP/test.conf" <<EOF
-# Generated by lib/tests/nested-hyprland.sh - do not edit.
-#
-# Sources the visual and behavioural half of the flake's HyDE config. startup.conf is left out
-# on purpose, see the header of that script.
-source = $home_files/.local/share/hypr/variables.conf
-source = $home_files/.local/share/hypr/defaults.conf
-source = $home_files/.local/share/hypr/windowrules.conf
-source = $home_files/.local/share/hypr/env.conf
-source = $home_files/.local/share/hypr/dynamic.conf
-
-# What .config/hypr/hyprland.conf normally sources, spelled out. That file also falls back to
-# \$HOME/.local/share/hyde/hyprland.conf, which on an installed system is the *installed* config:
-# sourcing it would mix the built and the installed configuration and produce bogus duplicate
-# declaration errors ("Gesture will be overshadowed by a previous gesture").
-source = $home_files/.config/hypr/keybindings.conf
-source = $home_files/.config/hypr/windowrules.conf
-source = $home_files/.config/hypr/monitors.conf
-source = $home_files/.config/hypr/userprefs.conf
-source = $home_files/.config/hypr/workflows.conf
-
-source = $home_files/.local/share/hypr/finale.conf
-EOF
-
-if [ ${#execs[@]} -gt 0 ]; then
-    {
-        echo
-        echo "# Clients requested with --quick/--exec, so the nested session is not an empty screen."
-        for exec_line in "${execs[@]}"; do
-            echo "exec-once = $exec_line"
-        done
-    } >>"$TMP/test.conf"
-fi
-
-echo "    hyprland:   $hyprland/bin/Hyprland"
-echo "    hyde:       $hyde_dir"
+echo "    hyprland:   $hyprland"
+echo "    hyde:       $hyde"
+echo "    seed:       $seed"
 echo "    generation: $generation"
-echo "    clients:    $([ "$new_generation" -eq 1 ] && echo "build under test (--new-generation)" || echo "installed system")"
-echo "    test conf:  $TMP/test.conf"
+echo "    home:       $HOME_DIR"
 echo
 
-echo "==> Hyprland --verify-config"
-echo "    note: HyDE's config always emits a few 'Error parsing gradient' warnings and"
-echo "    'source= globbing error' lines. Measured on this repository, the installed and the"
-echo "    built config produce exactly the same ones, so the verdict that matters is the"
-echo "    'config ok' at the end."
+# ---------------------------------------------------------------------------
+# deploy through the real artifacts, in the order the activation uses
+# ---------------------------------------------------------------------------
+# `home-files` is the tree of symlinks home-manager's linkGeneration creates, taken straight out of
+# the built generation rather than reproduced here. Modes are not preserved: the tree is read-only
+# in the store, and the seed below has to be able to write beside it.
+echo "==> deploying the home-manager linked files"
+cp -a --no-preserve=mode,ownership "$generation/home-files/." "$HOME_DIR/"
+
+echo "==> running the hydeSeed activation script against the throwaway HOME"
+export HOME="$HOME_DIR"
+export XDG_CONFIG_HOME="$HOME_DIR/.config"
+export XDG_DATA_HOME="$HOME_DIR/.local/share"
+export XDG_STATE_HOME="$HOME_DIR/.local/state"
+export XDG_CACHE_HOME="$HOME_DIR/.cache"
+export XDG_DATA_DIRS="$generation/home-path/share:/run/current-system/sw/share:${XDG_DATA_DIRS:-}"
+export PATH="$generation/home-path/bin:$hyprland/bin:$HOME_DIR/.local/bin:$PATH"
+
+"$seed"
+
+[ -f "$HOME_DIR/.config/hypr/hyprland.lua" ] || die "the seed did not deploy ~/.config/hypr/hyprland.lua"
+[ -f "$HOME_DIR/.local/share/hypr/hyde.lua" ] || die "the seed did not deploy ~/.local/share/hypr/hyde.lua"
+
+if remaining=$(grep -rl '/home/khing/' "$HOME_DIR/.config/waybar" 2>/dev/null); then
+    die "waybar config still carries the upstream author's home path: $remaining"
+fi
+echo "    deployment ok, no /home/khing paths left under ~/.config/waybar"
+
+# ---------------------------------------------------------------------------
+# parse check
+# ---------------------------------------------------------------------------
+echo
+echo "==> Hyprland --verify-config against the deployed entry point"
 set +e
-"$hyprland/bin/Hyprland" --verify-config -c "$TMP/test.conf"
-verify_status=$?
+"$hyprland/bin/Hyprland" --verify-config -c "$HOME_DIR/.config/hypr/hyprland.lua" 2>&1 | tail -8
+status=${PIPESTATUS[0]}
 set -e
-if [ "$verify_status" -ne 0 ]; then
-    die "Hyprland rejected the config (exit $verify_status)"
+[ "$status" -eq 0 ] || die "Hyprland rejected the deployed config (exit $status)"
+
+[ "$verify_only" -eq 1 ] && exit 0
+
+# ---------------------------------------------------------------------------
+# nested session
+# ---------------------------------------------------------------------------
+# HyDE starts its daemons through `hyde-shell app -u ... -t service`, which registers systemd user
+# units. That is deliberately not exercised here: the units would land in the live user manager.
+# The clients are launched directly instead, so this covers the configuration and not the unit
+# wiring.
+#
+# HyDE ships no wallpaper of its own — those come with the theme packages — so one is generated.
+# The Lua is assembled line by line rather than through a quoted heredoc: the argument to awww img
+# needs its own single quotes, and interpolating them into a double-quoted Lua string terminates it.
+wallpaper="$TMP/wallpaper.png"
+if command -v magick >/dev/null 2>&1; then
+    magick -size 2560x1440 gradient:'#1e1e2e-#89b4fa' "$wallpaper"
+else
+    wallpaper=""
 fi
 
-if [ "$verify_only" -eq 1 ]; then
-    exit 0
-fi
+{
+    echo
+    echo "-- Appended by lib/tests/nested-hyprland.sh for this run only."
+    echo 'hl.on("hyprland.start", function()'
+    echo '	hl.exec_cmd("waybar")'
+    echo '	hl.exec_cmd("kitty")'
+    if [ -n "$wallpaper" ]; then
+        echo '	hl.exec_cmd("awww-daemon")'
+        printf '\thl.exec_cmd("sh -c \x27sleep 3; awww img %s\x27")\n' "$wallpaper"
+    fi
+    for one in "${execs[@]}"; do
+        printf '\thl.exec_cmd("%s")\n' "$one"
+    done
+    echo 'end)'
+} >>"$HOME_DIR/.config/hypr/hyprland.lua"
 
 echo
 echo "==> starting nested Hyprland (close the window or Ctrl-C to stop)"
-if [ ${#execs[@]} -eq 0 ]; then
-    echo "    note: startup.conf is skipped, so nothing draws a wallpaper and no daemon starts."
-    echo "    An empty Hyprland output is just Hyprland's default background colour, which reads as"
-    echo "    black. Pass --quick (preview clients) or --exec <command> to put something in it:"
-    echo "        $(basename "${BASH_SOURCE[0]}") --quick"
-else
-    echo "    launching inside the nested session:"
-    for exec_line in "${execs[@]}"; do
-        echo "        $exec_line"
+"$hyprland/bin/Hyprland" -c "$HOME_DIR/.config/hypr/hyprland.lua" >"$TMP/nested.log" 2>&1 &
+hpid=$!
+
+sig=""
+for _ in $(seq 1 40); do
+    sleep 0.5
+    kill -0 "$hpid" 2>/dev/null || {
+        echo "nested Hyprland exited early:" >&2
+        tail -20 "$TMP/nested.log" >&2
+        exit 1
+    }
+    for d in "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"/hypr/*/; do
+        [ -S "$d/.socket.sock" ] || continue
+        s=$(basename "$d")
+        [ "$s" = "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && continue
+        sig="$s"
     done
-fi
+    [ -n "$sig" ] && break
+done
+[ -n "$sig" ] || die "the nested instance never created a socket"
+
+sleep 8
 echo
-"$hyprland/bin/Hyprland" -c "$TMP/test.conf"
+echo "==> layers in the nested session"
+hyprctl -i "$sig" layers 2>&1 | sed -n '1,20p'
+echo
+echo "==> config errors reported by the nested session"
+hyprctl -i "$sig" configerrors 2>&1 | head -10
+echo
+echo "==> wallpaper daemon"
+ap=$(pgrep -f awww-daemon | head -1 || true)
+if [ -n "$ap" ]; then
+    awl=$(tr '\0' '\n' <"/proc/$ap/environ" | sed -n 's/^WAYLAND_DISPLAY=//p')
+    WAYLAND_DISPLAY="$awl" awww query 2>&1 | head -5
+else
+    echo "no awww-daemon running"
+fi

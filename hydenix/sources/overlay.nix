@@ -15,11 +15,11 @@ let
     Tela-circle-dracula = callPackage ./Tela-circle-dracula.nix { };
     Bibata-Modern-Ice = callPackage ./Bibata-Modern-Ice.nix { };
     hyde = callPackage ./hyde.nix { inherit inputs; };
+    hyprquery = callPackage ./hyprquery.nix { src = inputs.hyprquery; };
     hydenix-themes = callPackage ./themes/default.nix { };
-    hyq = inputs.hyq.packages.${prev.stdenv.hostPlatform.system}.default;
     hydectl = inputs.hydectl.packages.${prev.stdenv.hostPlatform.system}.default;
     hyde-ipc = inputs.hyde-ipc.packages.${prev.stdenv.hostPlatform.system}.default;
     hyde-config = inputs.hyde-config.packages.${prev.stdenv.hostPlatform.system}.default;
   };
 in
-packages // (import ./pins.nix { inherit inputs; }).overlay final prev
+packages

@@ -4,7 +4,6 @@
 }:
 {
   imports = [
-    ./mutable.nix
     ./comma.nix
     ./dolphin.nix
     ./editors.nix
@@ -13,7 +12,6 @@
     ./gtk.nix
     ./git.nix
     ./hyde.nix
-    ./hyprland
     ./lockscreen.nix
     ./notifications.nix
     ./portal.nix
@@ -23,7 +21,6 @@
     ./shell.nix
     ./social.nix
     ./spotify.nix
-    ./swww.nix
     ./terminals.nix
     ./theme.nix
     ./uwsm.nix
@@ -38,7 +35,13 @@
 
   config = {
     hydenix.hm.enable = lib.mkDefault false;
-    home.stateVersion = "25.05";
+
+    # A default, not a fixed value. home.stateVersion is the anchor home-manager uses to decide
+    # which option defaults a configuration keeps, so it is the user's decision: pinning it here
+    # means nobody can ever adopt a newer release's defaults without patching hydenix. It stays at
+    # the release hydenix was last migrated to, so an untouched configuration keeps today's
+    # behaviour and only a deliberate bump moves it.
+    home.stateVersion = lib.mkDefault "25.05";
 
     # let home-manager control itself
     programs.home-manager.enable = true;

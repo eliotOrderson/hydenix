@@ -36,12 +36,10 @@ in
     ];
 
     home.file = {
-      ".config/xdg-terminals.list" = {
-        source = "${pkgs.hyde}/Configs/.config/xdg-terminals.list";
-      };
-      ".config/kitty/hyde.conf" = {
-        source = "${pkgs.hyde}/Configs/.config/kitty/hyde.conf";
-      };
+      # HyDE ships a kitty.conf and marks it "preserve", but this option is the declarative source
+      # for the same file, so it wins: hydeSeed sees the symlink already in place and leaves it
+      # alone. configText is the extension point, and editing the generated file by hand was never
+      # going to survive a switch.
       ".config/kitty/kitty.conf" = {
         text = ''
           include hyde.conf
@@ -50,16 +48,6 @@ in
           ${cfg.kitty.configText}
         '';
         force = true;
-        mutable = true;
-      };
-
-      # Kitty
-      # stateful file for kitty wallbash
-
-      ".config/kitty/theme.conf" = {
-        source = "${pkgs.hyde}/Configs/.config/kitty/theme.conf";
-        force = true;
-        mutable = true;
       };
     };
   };

@@ -22,11 +22,11 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      # `nixpkgs` and `home-manager` track release branches and `hyde`/`nixpkgs-hyde` carry explicit
-      # revisions, so a plain `nix flake update` moves exactly what should move: the branches
-      # forward, the HyDE bundle stays put. Do not rewrite the URLs here: pinning nixpkgs to the
-      # revision the lock happened to resolve would fight the branch and break the bundle
-      # invariant that `hyde` and `nixpkgs-hyde` are bumped together.
+      # `nixpkgs` and `home-manager` track release branches while `hyde` and `hyprquery` carry
+      # explicit revisions, so a plain `nix flake update` moves exactly what should move: the
+      # branches forward, the HyDE sources stay put. Do not rewrite the URLs here. Pointing
+      # `nixpkgs` at whatever revision the lock happened to resolve would fight the branch, and
+      # there is no longer a second nixpkgs to keep in step with `hyde`.
       - name: Update flake.lock
         run: nix flake update
 

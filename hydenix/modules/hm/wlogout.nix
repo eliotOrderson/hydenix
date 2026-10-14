@@ -31,37 +31,5 @@ in
       # wlogout
       (lib.mkIf cfg.wlogout.enable wlogout) # logout menu
     ];
-
-    home.file = {
-
-      # icons
-      ".config/wlogout/icons/" = {
-        source = "${pkgs.hyde}/Configs/.config/wlogout/icons/";
-        recursive = true;
-      };
-
-      # Stateful files with themes
-      ".config/wlogout/layout_1" = {
-        source = "${pkgs.hyde}/Configs/.config/wlogout/layout_1";
-        force = true;
-        mutable = true;
-      };
-      ".config/wlogout/style_1.css" = {
-        source = "${pkgs.hyde}/Configs/.config/wlogout/style_1.css";
-        force = true;
-        mutable = true;
-      };
-      ".config/wlogout/layout_2" = {
-        source = "${pkgs.hyde}/Configs/.config/wlogout/layout_2";
-        force = true;
-        mutable = true;
-      };
-      ".config/wlogout/style_2.css" = {
-        source = "${pkgs.hyde}/Configs/.config/wlogout/style_2.css";
-        force = true;
-        mutable = true;
-      };
-
-    };
   };
 }

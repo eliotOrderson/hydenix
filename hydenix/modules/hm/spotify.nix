@@ -21,14 +21,5 @@ in
     home.packages = with pkgs; [
       spotify
     ];
-
-    home.file = {
-      ".config/spotify-flags.conf" = {
-        source = "${pkgs.hyde}/Configs/.config/spotify-flags.conf";
-      };
-      ".config/electron-flags.conf" = {
-        source = "${pkgs.hyde}/Configs/.config/electron-flags.conf";
-      };
-    };
   };
 }
